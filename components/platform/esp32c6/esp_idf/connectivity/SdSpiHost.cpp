@@ -1,0 +1,1 @@
+// ESP32-C6 SD-over-SPI host implementation placeholder.

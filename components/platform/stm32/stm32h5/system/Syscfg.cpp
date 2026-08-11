@@ -1,0 +1,1 @@
+// STM32H5 SYSCFG implementation placeholder.

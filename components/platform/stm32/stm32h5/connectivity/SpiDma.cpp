@@ -1,0 +1,1 @@
+// STM32H5 SPI DMA integration placeholder.

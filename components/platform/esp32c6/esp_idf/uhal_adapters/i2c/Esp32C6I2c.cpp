@@ -1,0 +1,1 @@
+// ESP32-C6 II2c adapter implementation placeholder.

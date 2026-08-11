@@ -1,0 +1,1 @@
+// STM32H5 IUart adapter implementation placeholder.

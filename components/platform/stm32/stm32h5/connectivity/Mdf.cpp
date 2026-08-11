@@ -1,0 +1,1 @@
+// STM32H5 MDF implementation placeholder.

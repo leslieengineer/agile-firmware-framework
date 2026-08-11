@@ -1,0 +1,1 @@
+// ESP32-C6 MCPWM implementation placeholder.

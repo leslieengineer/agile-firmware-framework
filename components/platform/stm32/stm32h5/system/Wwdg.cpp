@@ -1,0 +1,1 @@
+// STM32H5 WWDG implementation placeholder.

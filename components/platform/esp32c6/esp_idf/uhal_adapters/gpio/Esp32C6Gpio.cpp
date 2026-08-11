@@ -1,0 +1,1 @@
+// ESP32-C6 IGpio adapter implementation placeholder.

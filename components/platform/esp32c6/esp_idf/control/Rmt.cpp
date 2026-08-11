@@ -1,0 +1,1 @@
+// ESP32-C6 RMT implementation placeholder.

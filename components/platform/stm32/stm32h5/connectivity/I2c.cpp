@@ -1,0 +1,1 @@
+// STM32H5 I2C implementation placeholder.

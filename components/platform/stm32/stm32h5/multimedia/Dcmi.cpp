@@ -1,0 +1,1 @@
+// STM32H5 DCMI implementation placeholder.

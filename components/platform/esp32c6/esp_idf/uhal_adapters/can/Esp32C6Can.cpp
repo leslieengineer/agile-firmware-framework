@@ -1,0 +1,1 @@
+// ESP32-C6 ICan adapter implementation placeholder.

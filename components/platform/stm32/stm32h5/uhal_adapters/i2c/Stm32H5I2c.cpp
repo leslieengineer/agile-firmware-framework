@@ -1,0 +1,1 @@
+// STM32H5 II2c adapter implementation placeholder.

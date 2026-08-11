@@ -1,0 +1,4 @@
+add_library(uhal_fake INTERFACE)
+target_include_directories(uhal_fake INTERFACE include)
+target_link_libraries(uhal_fake INTERFACE uhal_interfaces)
+
