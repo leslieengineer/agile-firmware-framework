@@ -14,4 +14,4 @@ private:
     uhal::II2c& bus_;
 };
 
-} // namespace devices
+}  // namespace devices

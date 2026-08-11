@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-
 #include <uhal/Status.hpp>
 
 namespace uhal {
@@ -13,4 +12,4 @@ public:
     virtual Status read_raw(std::uint16_t& sample) = 0;
 };
 
-} // namespace uhal
+}  // namespace uhal

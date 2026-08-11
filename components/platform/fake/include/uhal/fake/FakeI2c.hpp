@@ -18,4 +18,4 @@ public:
     }
 };
 
-} // namespace uhal::fake
+}  // namespace uhal::fake

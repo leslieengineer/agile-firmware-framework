@@ -15,4 +15,4 @@ enum class Status : std::uint8_t {
     invalid_argument,
 };
 
-} // namespace uhal
+}  // namespace uhal

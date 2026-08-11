@@ -11,4 +11,4 @@ public:
     virtual Status feed() = 0;
 };
 
-} // namespace uhal
+}  // namespace uhal
