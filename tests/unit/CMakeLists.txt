@@ -1,3 +1,3 @@
 add_executable(uhal_unit_tests UhalUnitTests.cpp)
-target_link_libraries(uhal_unit_tests PRIVATE sht3x modbus_rtu uhal_fake)
+target_link_libraries(uhal_unit_tests PRIVATE environment_monitor sht3x modbus_rtu frame_protocol uhal_fake)
 add_test(NAME uhal_unit_tests COMMAND uhal_unit_tests)
