@@ -229,147 +229,175 @@ Remove-Item -Recurse -Force build
 
 ## Quick Start: Integration Guide
 
-To use this catalog in a new product, follow these steps to import, configure, and compose your firmware.
+This guide uses the repository's NUCLEO-L476RG reference product as the starting point for a real STM32CubeIDE project. It uses CMSIS/LL in Layer 1, UHAL adapters in Layer 3, and keeps application logic independent of STM32 headers.
 
-### 1. Add the Catalog to Your Project
-Add this repository as a Git submodule in your project's `components/` or `external/` directory:
+### 1. Install the Required Tools
+
+Install STM32CubeIDE and the STM32Cube L4 firmware package. Connect a NUCLEO-L476RG board through the ST-LINK USB connector.
+
+The reference board mapping is:
+
+| Function | MCU resource | Board connection |
+| --- | --- | --- |
+| CLI | USART2, PA2 TX / PA3 RX, 115200-8-N-1 | ST-LINK Virtual COM port |
+| Status LED | PA5 | LD2 green LED |
+| Scheduler tick | SysTick, 1 ms | Cortex-M4 exception |
+
+Open the Windows `STMicroelectronics STLink Virtual COM Port` at 115200 baud, 8 data bits, no parity, one stop bit, and no flow control.
+
+### 2. Create the STM32CubeIDE Project
+
+1. Start STM32CubeIDE.
+2. Select **File > New > STM32 Project**.
+3. In the Board Selector, choose **NUCLEO-L476RG**.
+4. Name the project, for example `my_l476rg_product`.
+5. Select the STM32CubeIDE toolchain and finish project generation.
+6. Open the generated `.ioc` file.
+
+Do not create a Static Library project. Choose a normal STM32 executable project so CubeIDE creates startup assembly, linker scripts, interrupt files, and a flashable ELF.
+
+### 3. Configure CubeMX
+
+In the `.ioc` configuration:
+
+1. Set **SYS > Debug** to **Serial Wire**. This preserves PA13 and PA14 for ST-LINK SWD.
+2. Enable **USART2 > Asynchronous**.
+3. Confirm PA2 is `USART2_TX` and PA3 is `USART2_RX`.
+4. Set USART2 to 115200 baud, 8 data bits, no parity, one stop bit, and no hardware flow control.
+5. Set PA5 to `GPIO_Output`. It drives LD2.
+6. Keep **SysTick** enabled as the HAL/LL time base.
+7. Generate code.
+
+For an onboard ST-LINK Virtual COM connection, PA2/PA3 must remain connected through the NUCLEO board solder bridges. Do not use a separate USB CDC stack for this reference product.
+
+### 4. Add the Catalog to Your Firmware Repository
+
+Use the catalog as a Git submodule or copy it into an `external/` directory:
 
 ```bash
-git submodule add https://github.com/your-repo/uhal-component-catalog.git components/uhal_catalog
+git submodule add <your-catalog-url> external/agile-firmware-framework
+git submodule update --init --recursive
 ```
 
-### 2. Configure via CMake
-In your product's `CMakeLists.txt`, set the target platform and link the specific components you need. This keeps the binary slim by only compiling what is used.
+The important reference sources are:
 
-```cmake
-# 1. Set the hardware platform
-set(UHAL_PLATFORM "STM32H5" CACHE STRING "Target platform")
-
-# 2. Include the catalog
-add_subdirectory(components/uhal_catalog)
-
-# 3. Link required libraries to your application
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    uhal::core          # Basic types and status codes
-    uhal::adapters      # Platform implementation (STM32H5)
-    uhal::sht3x         # Reusable SHT3x driver
-)
+```text
+external/agile-firmware-framework/
+  components/uhal/
+  components/services/environment_monitor/
+  components/platform/stm32/stm32l4/nucleo_l476rg/
+  products/env_monitor/board/nucleo_l476rg/
 ```
 
-### 3. Implement Board Configuration
-The catalog provides the logic, but you must define the physical mapping (pins, instances). Create a `board/` directory in your product folder:
+### 5. Copy or Link the Reference Source Files
 
-**`board_config.hpp`**
+For a first integration, copy these sources into your CubeIDE project. Later, replace copies with a CMake subdirectory or linked resources if desired.
+
+| Catalog source | CubeIDE destination | Layer |
+| --- | --- | --- |
+| `components/uhal/core/include/uhal/*` | `Core/Inc/uhal/` | 2 |
+| `components/uhal/interfaces/include/uhal/*` | `Core/Inc/uhal/` | 2 |
+| `components/services/environment_monitor/include/services/*` | `Core/Inc/services/` | 4 |
+| `components/services/environment_monitor/src/*` | `Core/Src/` | 4 |
+| `components/platform/stm32/stm32l4/nucleo_l476rg/low_level/include/stm32l4/*` | `Core/Inc/stm32l4/` | 1 |
+| `components/platform/stm32/stm32l4/nucleo_l476rg/low_level/src/*` | `Core/Src/` | 1 |
+| `components/platform/stm32/stm32l4/nucleo_l476rg/adapters/include/stm32l4/*` | `Core/Inc/stm32l4/` | 3 |
+| `components/platform/stm32/stm32l4/nucleo_l476rg/adapters/src/*` | `Core/Src/` | 3 |
+
+Refresh the CubeIDE project after adding `.cpp` files. Verify that the new files appear in the project explorer and are compiled with the C++ compiler, not the C compiler.
+
+### 6. Replace the Generated Application Entry Point
+
+Keep CubeIDE's startup assembly and linker script. Replace only the generated application body with the reference composition root below. Use a `.cpp` file for the application entry point and ensure the generated C `main.c` is excluded or renamed; a project must contain exactly one `main()`.
+
 ```cpp
-namespace board {
-    // Hardware-specific configuration for the adapter
-    extern Stm32H5I2cConfig sensor_bus_config; 
-    void init(); // System clock, GPIO init, etc.
-}
-```
-
-### 4. Compose the Application (Composition Root)
-In your `main.cpp`, instantiate the adapters and inject them into the logic. This is the only place where platform-specific classes (e.g., `Stm32H5I2c`) are visible.
-
-```cpp
-#include "board_config.hpp"
-#include "uhal/adapters/stm32h5/stm32h5_i2c_adapter.hpp"
-#include "uhal/devices/sht3x/sht3x.hpp"
+#include <services/EnvironmentMonitor.hpp>
+#include <stm32l4/NucleoL476rgAdapters.hpp>
+#include <stm32l4/NucleoL476rgLowLevel.hpp>
 
 int main() {
-    board::init();
+    stm32l4::nucleo_l476rg::low_level::initialize();
 
-    // Layer 3: Create concrete platform adapter
-    static uhal::Stm32H5I2c i2c_bus(board::sensor_bus_config);
-
-    // Layer 4: Inject adapter into reusable logic
-    // The Sht3x driver only sees the 'II2c' interface
-    static devices::Sht3x air_sensor(i2c_bus);
+    stm32l4::nucleo_l476rg::adapters::StLinkVirtualCom cli_uart;
+    stm32l4::nucleo_l476rg::adapters::Ld2 status_led;
+    stm32l4::nucleo_l476rg::adapters::Clock clock;
+    services::EnvironmentMonitor monitor{cli_uart, status_led, clock, 0x4C476000U};
 
     while (true) {
-        if (air_sensor.read() == uhal::Status::Ok) {
-            float temp = air_sensor.get_temperature();
-        }
-        delay_ms(1000);
+        monitor.run_once();
     }
 }
 ```
 
----
+This is Layer 5. It is allowed to see concrete adapter classes. It must not contain register writes, UART polling, or application policy.
 
-## Architecture Layers
+### 7. Wire the SysTick Interrupt
 
-### Layer 1: Low-Level Platform Drivers
-The closest catalog to hardware and the vendor SDK. It knows peripheral instances, pins, clocks, and DMA.
-- **STM32H5**: RCC, GPIO, DMA, I2C, SPI, etc.
-- **ESP32-C6**: GPIO, GDMA, I2C, SPI, etc.
+In the generated interrupt source, replace the SysTick body with:
 
-### Layer 2: UHAL Contracts
-Defines platform-neutral capabilities in `components/uhal/interfaces`.
-- `II2c`, `ISpi`, `IUart`: Communication transports.
-- `IGpio`, `IAdc`, `IPwm`: Signal I/O.
+```cpp
+extern "C" void SysTick_Handler() {
+    stm32l4::nucleo_l476rg::low_level::systick_interrupt_handler();
+}
+```
 
-### Layer 3: Platform Adapters
-Adapters implement a UHAL contract using Layer 1 drivers and map vendor errors to `uhal::Status`.
-- `Stm32H5I2c : public II2c`
-- `Esp32C6I2c : public II2c`
+The interrupt must report only to Layer 1. Do not call `EnvironmentMonitor`, publish business events, write telemetry, or call blocking APIs from an ISR.
 
-### Layer 4: Reusable Logic
-Pure logic that **never** includes a vendor SDK.
-- **devices**: `sht3x`, `mpu6050`, etc.
-- **protocols**: `modbus-rtu`, `nmea`, etc.
-- **services**: Logging, OTA, Telemetry.
+### 8. Configure Build Settings
 
-### Layer 5: Product Composition Root
-The `products/<product>/app/main.cpp` which ties everything together.
-
----
-
-## Project Tree
+For CubeIDE Managed Build, add these include directories to both the C and C++ compiler settings:
 
 ```text
-.
-├── components/
-│   ├── uhal/                             # Layer 2: Contracts
-│   ├── platform/                         # Layers 1 & 3: Adapters
-│   │   ├── stm32/stm32h5/
-│   │   └── esp32c6/esp_idf/
-│   ├── devices/                          # Layer 4: Chip drivers
-│   ├── protocols/                        # Layer 4: Protocols
-│   └── libraries/                        # Layer 4: Pure algorithms
-├── products/
-│   └── env_monitor/                      # Layer 5: Concrete product
-└── tests/                                # Host and Integration tests
+Core/Inc
+external/agile-firmware-framework/components/uhal/core/include
+external/agile-firmware-framework/components/uhal/interfaces/include
+external/agile-firmware-framework/components/services/environment_monitor/include
+external/agile-firmware-framework/components/platform/stm32/stm32l4/nucleo_l476rg/low_level/include
+external/agile-firmware-framework/components/platform/stm32/stm32l4/nucleo_l476rg/adapters/include
 ```
 
-## Design Patterns
+Compile the catalog `.cpp` files as C++17 or later. Retain the NUCLEO-L476RG defaults generated by CubeIDE:
 
-| Pattern | Use | Purpose |
-|---|---|---|
-| Ports and Adapters | Contracts are ports; implementations are adapters | Separates logic from hardware |
-| Dependency Injection | Constructors receive interface references | Explicit and testable dependencies |
-| Composition Root | `main.cpp` | Controls the object graph in one place |
-
-## SOLID Assessment
-
-| Principle | Status | Evidence |
-|---|---|---|
-| **SRP** | Aligned | Adapters map APIs, Devices understand chips. |
-| **OCP** | Strong | Add new MCUs without touching existing drivers. |
-| **ISP** | Strong | Small interfaces (II2c, IGpio) instead of a "God HAL". |
-| **DIP** | Strong | Logic depends on Abstractions, not SDKs. |
-
-## Testing
-
-| Test | Environment | Verifies |
-|---|---|---|
-| **Unit** | Host (PC) | Logic, CRC, state machines using Fake Adapters. |
-| **Integration** | Real Board | Timing, DMA, and physical transceiver behavior. |
-
-## Build and Test
-
-```powershell
-cmake -S . -B build
-cmake --build build
-ctest --test-dir build --output-on-failure
+```text
+-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 ```
+
+Do not add STM32 HAL calls back into `EnvironmentMonitor`. The reference low-level driver uses CMSIS/LL register primitives, so it does not require `HAL_UART_Transmit`, `HAL_GPIO_WritePin`, or `HAL_GetTick`.
+
+### 9. Build, Flash, and Verify
+
+1. Select **Project > Clean**.
+2. Select **Project > Build Project**.
+3. Connect the NUCLEO board through ST-LINK USB.
+4. Select **Run > Debug As > STM32 MCU C/C++ Application** or use **Run** to flash.
+5. Open the ST-LINK Virtual COM terminal.
+
+Expected behavior:
+
+```text
+Temperature: 23 C
+Temperature: 26 C
+```
+
+The first telemetry line is immediate. Later lines occur every five seconds. The simulated temperature changes every second; LD2 is on when the current temperature is above 25 C.
+
+Send these commands followed by Enter:
+
+```text
+help
+status
+```
+
+### 10. Add the Next Peripheral Without Breaking the Architecture
+
+For I2C, SPI, DMA, ADC, or a real sensor, always extend the same vertical path:
+
+1. Add a board-specific hardware API under `low_level/`.
+2. Add a Layer 3 adapter implementing the matching UHAL interface.
+3. Add or extend a fake adapter and host contract test.
+4. Write Layer 4 device/protocol/service code using only the UHAL interface.
+5. Construct and inject the new adapter in the Layer 5 composition root.
+
+Never include STM32 headers in Layer 4. Never let an ISR include or call a Layer 4 service. This is what keeps the product testable and makes another board or MCU a replacement of Layers 1, 3, and 5 rather than a rewrite of business logic.
+
+For a full explanation of the reference product execution flow, see [NUCLEO-L476RG.md](docs/NUCLEO-L476RG.md).
