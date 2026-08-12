@@ -1,19 +1,39 @@
+#include <chrono>
 #include <cstdint>
-#include <devices/Sht3x.hpp>
-#include <protocols/ModbusRtuMaster.hpp>
-#include <uhal/fake/FakeI2c.hpp>
+#include <thread>
+#include <uhal/fake/FakeGpio.hpp>
 #include <uhal/fake/FakeUart.hpp>
 
+#include "EnvironmentMonitor.hpp"
+
+namespace {
+
+class HostClock final : public uhal::IClock {
+public:
+    std::uint32_t now_ms() const override {
+        const auto elapsed = std::chrono::steady_clock::now() - start_time_;
+        return static_cast<std::uint32_t>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
+    }
+
+    void sleep_ms(std::uint32_t duration_ms) override {
+        std::this_thread::sleep_for(std::chrono::milliseconds(duration_ms));
+    }
+
+private:
+    const std::chrono::steady_clock::time_point start_time_ = std::chrono::steady_clock::now();
+};
+
+}  // namespace
+
 int main() {
-    uhal::fake::FakeI2c  sensor_bus;
-    uhal::fake::FakeUart modbus_uart;
+    uhal::fake::FakeUart cli_uart;
+    uhal::fake::FakeGpio status_led;
+    HostClock            clock;
+    EnvironmentMonitor   monitor{cli_uart, status_led, clock, 0x4C476000U};
 
-    devices::Sht3x             environment_sensor{sensor_bus};
-    protocols::ModbusRtuMaster modbus{modbus_uart};
-
-    constexpr std::uint8_t request[]     = {0x03, 0x00, 0x00, 0x00, 0x01};
-    const auto             sensor_status = environment_sensor.start_single_shot_measurement();
-    const auto             modbus_status = modbus.send_request(0x01, request, sizeof(request));
-
-    return sensor_status == uhal::Status::ok && modbus_status == uhal::Status::ok ? 0 : 1;
+    while (true) {
+        monitor.run_once();
+        clock.sleep_ms(1);
+    }
 }
