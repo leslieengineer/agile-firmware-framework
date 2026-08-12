@@ -39,7 +39,7 @@ flowchart TB
 product -> reusable_logic -> uhal_interfaces <- platform_adapter -> low_level -> vendor_sdk
 ```
 
-1. `devices`, `protocols`, and `services` may depend only on `uhal-core`, `uhal-interfaces`, or pure libraries.
+1. `devices`, `protocols`, and `services` may depend only on `components/uhal/core`, `components/uhal/interfaces`, or pure libraries.
 2. Only code under `platform` may include STM32 HAL/LL, ESP-IDF, FreeRTOS, or register headers.
 3. The product composition root is the only place that creates concrete adapters and injects dependencies.
 4. Reusable logic must not use `#ifdef STM32` or `#ifdef ESP32`.
@@ -64,7 +64,7 @@ Board configuration is not a reusable platform driver. Two products may use the 
 
 ### Layer 2: UHAL Contracts
 
-[components/uhal-interfaces](components/uhal-interfaces) defines platform-neutral capabilities:
+[components/uhal/interfaces](components/uhal/interfaces) defines platform-neutral capabilities:
 
 | Contract | Capability |
 |---|---|
@@ -90,7 +90,7 @@ public:
 };
 ```
 
-[STM32H5 adapters](components/platform/stm32/stm32h5/uhal_adapters) and [ESP32-C6 adapters](components/platform/esp32c6/esp_idf/uhal_adapters) contain skeletons for I2C, SPI, UART, CAN, GPIO, ADC, PWM, clock, storage, and watchdog. [Fake adapters](components/platform/fake) implement contracts for host tests.
+[STM32H5 adapters](components/platform/stm32/stm32h5/adapters) and [ESP32-C6 adapters](components/platform/esp32c6/esp_idf/adapters) contain skeletons for I2C, SPI, UART, CAN, GPIO, ADC, PWM, clock, storage, and watchdog. [Fake adapters](components/platform/fake) implement contracts for host tests.
 
 Adapters must not contain device CRC, Modbus frames, or product policy. They translate UHAL capabilities to vendor APIs only.
 
@@ -129,12 +129,17 @@ Changing platforms replaces `Stm32H5*` with `Esp32C6*`; drivers, protocols, and 
 ├── README.md
 ├── Theory.md
 ├── components/
-│   ├── uhal-core/                        # Shared platform-neutral types
-│   ├── uhal-interfaces/                  # Layer 2 capability contracts
+│   ├── uhal/                             # Layer 2 platform-neutral contracts
+│   │   ├── core/                         # Status, common data types, and enums
+│   │   └── interfaces/                   # II2c, IUart, IGpio, and other ports
 │   ├── platform/
 │   │   ├── fake/                         # Host-test adapters
-│   │   ├── stm32/stm32h5/                # Layers 1 and 3 for STM32H5
-│   │   └── esp32c6/esp_idf/              # Layers 1 and 3 for ESP-IDF
+│   │   ├── stm32/stm32h5/
+│   │   │   ├── low_level/                # Layer 1: STM32 HAL/LL and IRQ access
+│   │   │   └── adapters/                 # Layer 3: UHAL implementations
+│   │   └── esp32c6/esp_idf/
+│   │       ├── low_level/                # Layer 1: ESP-IDF access
+│   │       └── adapters/                 # Layer 3: UHAL implementations
 │   ├── devices/                          # Layer 4 chip drivers and IoT catalog
 │   ├── protocols/                        # Layer 4 protocol catalog
 │   ├── services/                         # Layer 4 product-independent policies

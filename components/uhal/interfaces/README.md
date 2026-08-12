@@ -1,6 +1,6 @@
 # UHAL Interfaces
 
-This is the contract layer between reusable logic and hardware. Each interface describes one capability required by a device driver, protocol, or application. Logic may include files in this directory and `uhal-core`; platform adapters implement the interfaces with STM32 HAL/LL, ESP-IDF, or host fakes.
+This is the contract layer between reusable logic and hardware. Each interface describes one capability required by a device driver, protocol, or application. Logic may include files in this directory and `components/uhal/core`; platform adapters implement the interfaces with STM32 LL/CMSIS, ESP-IDF, or host fakes.
 
 ## Current Contracts
 

@@ -8,8 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 enable_testing()
 
-add_subdirectory(components/uhal-core)
-add_subdirectory(components/uhal-interfaces)
+add_subdirectory(components/uhal/core)
+add_subdirectory(components/uhal/interfaces)
 add_subdirectory(components/libraries)
 add_subdirectory(components/platform/fake)
 add_subdirectory(components/services)
