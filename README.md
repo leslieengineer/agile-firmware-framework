@@ -224,3 +224,152 @@ Remove-Item -Recurse -Force build
 - Products use constructor injection to compose adapters and logic.
 - Reusable logic has host unit tests.
 - Board and MCU details live only in `platform/` or `products/<product>/board/`.
+
+---
+
+## Quick Start: Integration Guide
+
+To use this catalog in a new product, follow these steps to import, configure, and compose your firmware.
+
+### 1. Add the Catalog to Your Project
+Add this repository as a Git submodule in your project's `components/` or `external/` directory:
+
+```bash
+git submodule add https://github.com/your-repo/uhal-component-catalog.git components/uhal_catalog
+```
+
+### 2. Configure via CMake
+In your product's `CMakeLists.txt`, set the target platform and link the specific components you need. This keeps the binary slim by only compiling what is used.
+
+```cmake
+# 1. Set the hardware platform
+set(UHAL_PLATFORM "STM32H5" CACHE STRING "Target platform")
+
+# 2. Include the catalog
+add_subdirectory(components/uhal_catalog)
+
+# 3. Link required libraries to your application
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    uhal::core          # Basic types and status codes
+    uhal::adapters      # Platform implementation (STM32H5)
+    uhal::sht3x         # Reusable SHT3x driver
+)
+```
+
+### 3. Implement Board Configuration
+The catalog provides the logic, but you must define the physical mapping (pins, instances). Create a `board/` directory in your product folder:
+
+**`board_config.hpp`**
+```cpp
+namespace board {
+    // Hardware-specific configuration for the adapter
+    extern Stm32H5I2cConfig sensor_bus_config; 
+    void init(); // System clock, GPIO init, etc.
+}
+```
+
+### 4. Compose the Application (Composition Root)
+In your `main.cpp`, instantiate the adapters and inject them into the logic. This is the only place where platform-specific classes (e.g., `Stm32H5I2c`) are visible.
+
+```cpp
+#include "board_config.hpp"
+#include "uhal/adapters/stm32h5/stm32h5_i2c_adapter.hpp"
+#include "uhal/devices/sht3x/sht3x.hpp"
+
+int main() {
+    board::init();
+
+    // Layer 3: Create concrete platform adapter
+    static uhal::Stm32H5I2c i2c_bus(board::sensor_bus_config);
+
+    // Layer 4: Inject adapter into reusable logic
+    // The Sht3x driver only sees the 'II2c' interface
+    static devices::Sht3x air_sensor(i2c_bus);
+
+    while (true) {
+        if (air_sensor.read() == uhal::Status::Ok) {
+            float temp = air_sensor.get_temperature();
+        }
+        delay_ms(1000);
+    }
+}
+```
+
+---
+
+## Architecture Layers
+
+### Layer 1: Low-Level Platform Drivers
+The closest catalog to hardware and the vendor SDK. It knows peripheral instances, pins, clocks, and DMA.
+- **STM32H5**: RCC, GPIO, DMA, I2C, SPI, etc.
+- **ESP32-C6**: GPIO, GDMA, I2C, SPI, etc.
+
+### Layer 2: UHAL Contracts
+Defines platform-neutral capabilities in `components/uhal/interfaces`.
+- `II2c`, `ISpi`, `IUart`: Communication transports.
+- `IGpio`, `IAdc`, `IPwm`: Signal I/O.
+
+### Layer 3: Platform Adapters
+Adapters implement a UHAL contract using Layer 1 drivers and map vendor errors to `uhal::Status`.
+- `Stm32H5I2c : public II2c`
+- `Esp32C6I2c : public II2c`
+
+### Layer 4: Reusable Logic
+Pure logic that **never** includes a vendor SDK.
+- **devices**: `sht3x`, `mpu6050`, etc.
+- **protocols**: `modbus-rtu`, `nmea`, etc.
+- **services**: Logging, OTA, Telemetry.
+
+### Layer 5: Product Composition Root
+The `products/<product>/app/main.cpp` which ties everything together.
+
+---
+
+## Project Tree
+
+```text
+.
+├── components/
+│   ├── uhal/                             # Layer 2: Contracts
+│   ├── platform/                         # Layers 1 & 3: Adapters
+│   │   ├── stm32/stm32h5/
+│   │   └── esp32c6/esp_idf/
+│   ├── devices/                          # Layer 4: Chip drivers
+│   ├── protocols/                        # Layer 4: Protocols
+│   └── libraries/                        # Layer 4: Pure algorithms
+├── products/
+│   └── env_monitor/                      # Layer 5: Concrete product
+└── tests/                                # Host and Integration tests
+```
+
+## Design Patterns
+
+| Pattern | Use | Purpose |
+|---|---|---|
+| Ports and Adapters | Contracts are ports; implementations are adapters | Separates logic from hardware |
+| Dependency Injection | Constructors receive interface references | Explicit and testable dependencies |
+| Composition Root | `main.cpp` | Controls the object graph in one place |
+
+## SOLID Assessment
+
+| Principle | Status | Evidence |
+|---|---|---|
+| **SRP** | Aligned | Adapters map APIs, Devices understand chips. |
+| **OCP** | Strong | Add new MCUs without touching existing drivers. |
+| **ISP** | Strong | Small interfaces (II2c, IGpio) instead of a "God HAL". |
+| **DIP** | Strong | Logic depends on Abstractions, not SDKs. |
+
+## Testing
+
+| Test | Environment | Verifies |
+|---|---|---|
+| **Unit** | Host (PC) | Logic, CRC, state machines using Fake Adapters. |
+| **Integration** | Real Board | Timing, DMA, and physical transceiver behavior. |
+
+## Build and Test
+
+```powershell
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
