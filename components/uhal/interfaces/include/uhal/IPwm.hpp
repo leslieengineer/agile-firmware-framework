@@ -1,5 +1,12 @@
 #pragma once
 
+/* ====================================================================
+ * @status: FROZEN
+ * @note: Contract for External Interrupts (EXTI).
+ *        Provides an asynchronous callback mechanism triggered by
+ *        voltage level changes on a GPIO pin.
+ * ==================================================================== */
+
 #include <cstdint>
 #include <uhal/Status.hpp>
 
