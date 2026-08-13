@@ -1,0 +1,37 @@
+name: Firmware CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  check-format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install clang-format
+      run: sudo apt-get install -y clang-format
+
+    - name: Apply formatting
+      shell: pwsh
+      run: .\tools\clangformat\Format-Code.ps1
+
+    # Enforce formatting: fail if git detects uncommitted changes
+    - name: Verify formatting
+      run: |
+        git diff --exit-code || (echo "[ERROR] Code formatting violation. Run Format-Code.ps1 locally and push the changes." && exit 1)
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # Run the local build script for host compilation and testing
+    - name: Build and execute tests
+      shell: pwsh
+      run: .\tools\scripts\build.ps1 -Clean -Test
