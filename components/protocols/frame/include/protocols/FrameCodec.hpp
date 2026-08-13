@@ -12,14 +12,14 @@ template <std::size_t MaximumPayload>
 class FrameCodec final {
 public:
     static constexpr std::uint16_t kSyncWord     = 0xA55AU;
-    static constexpr std::size_t   kHeaderSize    = 5U;
-    static constexpr std::size_t   kCrcSize       = 2U;
-    static constexpr std::size_t   kMaximumFrame  = kHeaderSize + MaximumPayload + kCrcSize;
+    static constexpr std::size_t   kHeaderSize   = 5U;
+    static constexpr std::size_t   kCrcSize      = 2U;
+    static constexpr std::size_t   kMaximumFrame = kHeaderSize + MaximumPayload + kCrcSize;
 
     struct Frame {
-        std::uint8_t                         opcode = 0;
+        std::uint8_t                             opcode = 0;
         std::array<std::uint8_t, MaximumPayload> payload{};
-        std::size_t                          payload_size = 0;
+        std::size_t                              payload_size = 0;
     };
 
     static uhal::Result<std::size_t> encode(const Frame& frame, std::uint8_t* output,
@@ -42,7 +42,7 @@ public:
         }
 
         const std::uint16_t crc = libraries::crc16_modbus(output, kHeaderSize + frame.payload_size);
-        output[kHeaderSize + frame.payload_size]     = static_cast<std::uint8_t>(crc);
+        output[kHeaderSize + frame.payload_size]      = static_cast<std::uint8_t>(crc);
         output[kHeaderSize + frame.payload_size + 1U] = static_cast<std::uint8_t>(crc >> 8U);
         return uhal::Result<std::size_t>::success(frame_size);
     }
