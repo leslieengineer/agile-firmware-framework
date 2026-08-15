@@ -1,0 +1,3 @@
+add_executable(local_switch_example main.cpp)
+target_link_libraries(local_switch_example PRIVATE binary_switch uhal_fake)
+add_test(NAME local_switch_example COMMAND local_switch_example)

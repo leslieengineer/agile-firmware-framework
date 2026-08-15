@@ -38,5 +38,6 @@ add_subdirectory(components/devices/sht3x)
 add_subdirectory(components/protocols/modbus-rtu)
 add_subdirectory(components/protocols/frame)
 add_subdirectory(products/env_monitor)
+add_subdirectory(examples/local_switch)
 add_subdirectory(tests)
 
