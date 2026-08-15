@@ -2,6 +2,8 @@
 
 Services are layer 4 reusable policies that are not tied to a single chip or wire protocol. They can coordinate cross-cutting concerns while remaining independent from an MCU SDK.
 
+- `binary_switch/`: implemented persisted on/off load policy over `IGpio` and a service-owned state-store port.
+- `environment_monitor/`: implemented monitoring sample over injected UHAL capabilities.
 - `logging/`: public contract is `ILogger.hpp`; platform owns the output implementation.
 - `configuration/`: future reusable configuration and validation policy over `IStorage`.
 - `health_monitor/`: future health/recovery/watchdog policy over `IClock` and `IWatchdog`.

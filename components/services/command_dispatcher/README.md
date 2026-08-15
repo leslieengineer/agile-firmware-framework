@@ -1,3 +1,3 @@
-# Command Dispatcher Service
+# Command Dispatcher
 
-Future command validation, routing, authorization policy, idempotency, and response correlation. Wire decoding belongs in protocol components.
+Bounded command parsing, authorization, idempotency, handler routing, and response delivery. It owns no product commands and has no transport/vendor dependency. Products register handlers; duplicate command IDs replay cached status without re-executing the handler.

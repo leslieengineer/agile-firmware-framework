@@ -1,5 +1,3 @@
-# Health Monitor Service Template
+# Health Monitor
 
-Use this directory for reusable system health policy: periodic checks, fault aggregation, recovery decisions, and watchdog feed conditions.
-
-The service may receive `uhal::IClock&`, `uhal::IWatchdog&`, and an optional logger. It defines policy; a platform adapter performs the actual watchdog operation.
+Fixed-capacity liveness policy. The watchdog is fed only when every mandatory source has checked in before its deadline. Recovery requests are injected; reboot rate limiting prevents uncontrolled restart loops.

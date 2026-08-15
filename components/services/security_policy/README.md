@@ -1,3 +1,3 @@
-# Security Policy Service
+# Security Policy
 
-Future credential lifecycle, authorization, message-verification policy, key rotation state, and audit events. Cryptographic accelerator/secure-storage calls remain behind platform adapters.
+Fixed-capacity command authorization, credential lifecycle, and image-signature policy. Cryptographic operations are injected through `ISignatureVerifier`; the service never includes a crypto/vendor SDK. An unavailable verifier rejects image activation by returning `denied`.

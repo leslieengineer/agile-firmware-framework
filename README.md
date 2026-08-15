@@ -19,7 +19,7 @@ When porting from STM32H5 to ESP32-C6, the application and `Sht3x` remain unchan
 ## Dependency Rules
 
 ```mermaid
-flowchart TB
+flowchart TD
     Product[Product / Application]
     Logic[Reusable Logic]
     Contract[UHAL Contracts]
@@ -102,10 +102,10 @@ Reusable logic must not include a vendor SDK.
 
 - [devices](components/devices): chip-specific register protocol, commands, CRC, conversion, retry, and state. `sht3x` is the working sample.
 - [protocols](components/protocols): wire and application protocol framing, parsing, checksum, timeout, and retry. `modbus-rtu` is the working sample.
-- [services](components/services): reusable policies such as logging, sampling, calibration, telemetry, offline queues, OTA, diagnostics, security, and power management.
-- [libraries](components/libraries): pure algorithms independent from UHAL and SDKs, including CRC, serialization, state machines, ring buffers, filters, units, and retry/backoff.
+- [services](components/services): reusable policies such as logging, sampling, calibration, telemetry, offline queues, OTA, diagnostics, security, and power management. `binary_switch` and `environment_monitor` are working samples.
+- [libraries](components/libraries): pure algorithms independent from UHAL and SDKs, including CRC, serialization, state machines, ring buffers, filters, units, and retry/backoff. `button` is a working sample.
 
-The IoT catalog defines ownership boundaries and planned dependencies. Only `sht3x` and `modbus-rtu` currently contain implementation.
+The IoT catalog defines ownership boundaries and planned dependencies. Implemented vertical slices include `sht3x`, `modbus-rtu`, `binary_switch`, `environment_monitor`, and `button`; the remaining catalog entries define planned ownership only.
 
 ### Layer 5: Product Composition Root
 
@@ -142,8 +142,8 @@ Changing platforms replaces `Stm32H5*` with `Esp32C6*`; drivers, protocols, and 
 │   │       └── adapters/                 # Layer 3: UHAL implementations
 │   ├── devices/                          # Layer 4 chip drivers and IoT catalog
 │   ├── protocols/                        # Layer 4 protocol catalog
-│   ├── services/                         # Layer 4 product-independent policies
-│   └── libraries/                        # Layer 4 pure algorithms
+│   ├── services/                         # Layer 4 policies, including binary_switch
+│   └── libraries/                        # Layer 4 pure algorithms, including button
 ├── products/
 │   └── env_monitor/                      # Layer 5 sample product
 │       ├── app/main.cpp

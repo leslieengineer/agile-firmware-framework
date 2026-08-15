@@ -1,3 +1,3 @@
 # Diagnostics Service
 
-Future component health snapshots, counters, error categorization, self-test coordination, and diagnostic export policy. Hardware reads remain in adapters/device drivers.
+Fixed counters, gauges, and bounded fault history. Other services depend only on `IDiagnosticsSink`; the registry provides snapshots without vendor or RTOS dependencies.

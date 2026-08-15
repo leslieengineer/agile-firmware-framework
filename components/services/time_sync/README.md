@@ -1,3 +1,3 @@
-# Time Synchronization Service
+# Time Sync Service
 
-Future time-source selection, synchronization policy, drift handling, and timestamp quality. NTP, GNSS, RTC, and network access remain behind dedicated adapters/protocols.
+Non-blocking synchronization policy over injected time-source and system-time ports. Unsynchronized devices remain operational and expose timestamp zero; implausible jumps are rejected as corrupt.

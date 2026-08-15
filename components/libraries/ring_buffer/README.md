@@ -1,3 +1,3 @@
-# Ring Buffer
+# Fixed Ring Buffer
 
-Future fixed-capacity ring buffer suitable for UART receive paths, event queues, and sampled data. It must have explicit ownership and concurrency assumptions.
+Header-only fixed-capacity FIFO with explicit full/empty behavior, peek, and drop-oldest support. It performs no allocation and is not internally synchronized; products provide the required execution-context synchronization.

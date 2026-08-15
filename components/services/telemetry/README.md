@@ -1,3 +1,3 @@
 # Telemetry Service
 
-Future mapping of domain data to a protocol payload, publish period, batching, and delivery policy. MQTT/CoAP/HTTP encoding belongs in the relevant protocol component.
+Bounded boolean telemetry encoder and delivery policy. It publishes through `IMessageTransport`, queues while offline, and never emits truncated JSON. Gateway arrival time is used when node UTC is unavailable.
