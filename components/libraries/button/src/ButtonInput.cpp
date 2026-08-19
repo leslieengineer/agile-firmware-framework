@@ -23,8 +23,10 @@ ButtonEvent ButtonInput::update(bool raw_pressed, std::uint32_t now_ms) {
         press_start_ms_ = now_ms;
         return ButtonEvent::press_started;
     }
-    return (now_ms - press_start_ms_) <= config_.short_press_max_ms ? ButtonEvent::short_press
-                                                                    : ButtonEvent::none;
+    const std::uint32_t held_ms = now_ms - press_start_ms_;
+    if (held_ms >= config_.factory_reset_press_min_ms) return ButtonEvent::factory_reset_press;
+    if (held_ms >= config_.commissioning_press_min_ms) return ButtonEvent::commissioning_press;
+    return held_ms <= config_.short_press_max_ms ? ButtonEvent::short_press : ButtonEvent::none;
 }
 
 bool ButtonInput::is_pressed() const {

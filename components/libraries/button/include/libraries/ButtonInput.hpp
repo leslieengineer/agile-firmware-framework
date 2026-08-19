@@ -4,11 +4,19 @@
 
 namespace libraries {
 
-enum class ButtonEvent : std::uint8_t { none, press_started, short_press };
+enum class ButtonEvent : std::uint8_t {
+    none,
+    press_started,
+    short_press,
+    commissioning_press,
+    factory_reset_press,
+};
 
 struct ButtonInputConfig {
-    std::uint32_t debounce_ms        = 25U;
-    std::uint32_t short_press_max_ms = 1000U;
+    std::uint32_t debounce_ms                 = 25U;
+    std::uint32_t short_press_max_ms          = 1000U;
+    std::uint32_t commissioning_press_min_ms  = 5000U;
+    std::uint32_t factory_reset_press_min_ms  = 10000U;
 };
 
 class ButtonInput final {

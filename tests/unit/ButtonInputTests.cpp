@@ -21,12 +21,22 @@ bool rejects_bounce() {
     if (button.update(false, 135U) != libraries::ButtonEvent::short_press) return false;
     return button.update(false, 200U) == libraries::ButtonEvent::none;
 }
-bool rejects_long_hold() {
+bool classifies_hold_durations() {
     libraries::ButtonInput button;
     button.update(true, 0U);
     button.update(true, 25U);
     button.update(false, 3025U);
-    return button.update(false, 3050U) == libraries::ButtonEvent::none;
+    if (button.update(false, 3050U) != libraries::ButtonEvent::none) return false;
+
+    button.update(true, 4000U);
+    button.update(true, 4025U);
+    button.update(false, 9025U);
+    if (button.update(false, 9050U) != libraries::ButtonEvent::commissioning_press) return false;
+
+    button.update(true, 10000U);
+    button.update(true, 10025U);
+    button.update(false, 20025U);
+    return button.update(false, 20050U) == libraries::ButtonEvent::factory_reset_press;
 }
 bool handles_timer_wrap() {
     libraries::ButtonInput  button;
@@ -38,7 +48,7 @@ bool handles_timer_wrap() {
 }
 }  // namespace
 int main() {
-    return clean_short_press() && rejects_bounce() && rejects_long_hold() && handles_timer_wrap()
+    return clean_short_press() && rejects_bounce() && classifies_hold_durations() && handles_timer_wrap()
                ? 0
                : 1;
 }
